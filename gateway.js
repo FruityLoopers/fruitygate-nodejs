@@ -20,261 +20,261 @@ var serialEnabled;
 processArgs();
 
 function processArgs(){
-  var numArgs = process.argv.length;
-  serialEnabled = true;
+    var numArgs = process.argv.length;
+    serialEnabled = true;
 
-  if(numArgs == 3) {
-    //node gateway HTTP_PORT
-    findAndBeginSerial();
-    beginHttp(process.argv[2]);
+    if(numArgs == 3) {
+        //node gateway HTTP_PORT
+        findAndBeginSerial();
+        beginHttp(process.argv[2]);
 
-  } else if(numArgs == 4 && process.argv[3] == 'noserial') {
-    //node gateway HTTP_PORT noserial
-    serialEnabled = false;
-    beginHttp(process.argv[2]);
+    } else if(numArgs == 4 && process.argv[3] == 'noserial') {
+        //node gateway HTTP_PORT noserial
+        serialEnabled = false;
+        beginHttp(process.argv[2]);
 
-  } else if(numArgs == 4) {
-    //node gateway HTTP_PORT SERIAL_PORT
-    beginSerial(process.argv[3]);
-    beginHttp(process.argv[2]);
+    } else if(numArgs == 4) {
+        //node gateway HTTP_PORT SERIAL_PORT
+        beginSerial(process.argv[3]);
+        beginHttp(process.argv[2]);
 
-  } else {
-    exitWithInfo(usage);
-  }
+    } else {
+        exitWithInfo(usage);
+    }
 }
 
 /* begin serial */
 function findAndBeginSerial() {
-  serialport.list(function (err, ports) {
-    var found = 0;
-    var name, port;
-    for(var i = 0; i < ports.length; i++) {
-      port = ports[i];
-      if(port.manufacturer == 'SEGGER') {
-        found++;
-        name = port.comName;
-      }
-    }
-    found == 1 ? beginSerial(name) : exitWithInfo(usage);
-  });
+    serialport.list(function (err, ports) {
+        var found = 0;
+        var name, port;
+        for(var i = 0; i < ports.length; i++) {
+            port = ports[i];
+            if(port.manufacturer == 'SEGGER') {
+                found++;
+                name = port.comName;
+            }
+        }
+        found == 1 ? beginSerial(name) : exitWithInfo(usage);
+    });
 }
 
 function beginSerial(port) {
-  log('Opening serial port ' + port);
-  serialPort = new SerialPort(port, {
-    baudrate: 38400,
-    parser: serialport.parsers.readline('\n')
-  }, false);
+    log('Opening serial port ' + port);
+    serialPort = new SerialPort(port, {
+        baudrate: 38400,
+        parser: serialport.parsers.readline('\n')
+    }, false);
 
-  serialPort.open(function(error) {
-    if(error) {
-      exitWithInfo('Serial failed to open: ' + error);
-    } else {
-      serialPort.write('status\r');
-      serialPort.on('data', function(data) {
-        incomingFromSerial(data);
-      });
-    }
-  });
+    serialPort.open(function(error) {
+        if(error) {
+            exitWithInfo('Serial failed to open: ' + error);
+        } else {
+            serialPort.write('status\r');
+            serialPort.on('data', function(data) {
+                incomingFromSerial(data);
+            });
+        }
+    });
 }
 
 /* begin http */
 function beginHttp(port) {
-  if(isValidPort(port)) {
-    log('Opening http port ' + port);
-    http.listen(port, function(){
-      initAddress();
-      initGateways();
-      runWebServer();
-      runSocketServer();
-    });
-  } else {
-    exitWithInfo(usage);
-  }
+    if(isValidPort(port)) {
+        log('Opening http port ' + port);
+        http.listen(port, function(){
+            initAddress();
+            initGateways();
+            runWebServer();
+            runSocketServer();
+        });
+    } else {
+        exitWithInfo(usage);
+    }
 }
 
 function initAddress() {
-  var address = http.address();
-  thisAddress = address['address'] + ':' + address['port'];
-  log('Serving clients on [' + thisAddress + ']');
+    var address = http.address();
+    thisAddress = address['address'] + ':' + address['port'];
+    log('Serving clients on [' + thisAddress + ']');
 }
 
 function initGateways() {
-  allAddresses.forEach(function (address) {
-    if(address != thisAddress) {
-      gateways[address] = require("socket.io-client");
-      gateways[address] = gateways[address].connect('http://' + address, { query: 'clientAddress=' + thisAddress });
-      log('Listening to gateway [' + address + ']');
-    }
-  });
+    allAddresses.forEach(function (address) {
+        if(address != thisAddress) {
+            gateways[address] = require("socket.io-client");
+            gateways[address] = gateways[address].connect('http://' + address, { query: 'clientAddress=' + thisAddress });
+            log('Listening to gateway [' + address + ']');
+        }
+    });
 }
 
 function runWebServer() {
-  app.get('/', function(req, res){
-    res.sendFile(__dirname + '/index.html');
-  });
+    app.get('/', function(req, res){
+        res.sendFile(__dirname + '/index.html');
+    });
 }
 
 function runSocketServer() {
-  io.on('connection', function(socket){
-    log('Client [' + clientAddress(socket) + '] just connected');
+    io.on('connection', function(socket){
+        log('Client [' + clientAddress(socket) + '] just connected');
 
-    socket.on('disconnect', function(){
-      log('Client [' + clientAddress(socket) + '] just disconnected');
-    });
+        socket.on('disconnect', function(){
+            log('Client [' + clientAddress(socket) + '] just disconnected');
+        });
 
-    socket.on(localSocket, function(input){
-      incomingFromSocket(input, socket);
-    });
+        socket.on(localSocket, function(input){
+            incomingFromSocket(input, socket);
+        });
 
-    socket.on(gatewaySocket, function(input){
-      incomingFromGateway(input, socket);
+        socket.on(gatewaySocket, function(input){
+            incomingFromGateway(input, socket);
+        });
     });
-  });
 }
 
 /* incoming */
 function incomingFromSerial(input) {
 
-  if(hasGatewayJson(input)) {
-    console.log('Gateway conditional entered...');
-    var obj = toObject(input);
-    var packet = toPacket(obj);
-    logIncoming('local mesh node', obj['sender'], obj['receiver'], obj['message']);
-    pushToSockets(packet);
-    pushToGateways(packet);
-    logDone();
-  } else if(hasHandshakeJson(input)) {
-      var handshakeObj = JSON.parse(
-          input.substring(
-              input.indexOf('{"handshakeMessage" : '),
-              input.indexOf('}}') + 2
-          )
-      )['handshakeMessage'];
+    if(hasGatewayJson(input)) {
+        console.log('Gateway conditional entered...');
+        var obj = toObject(input);
+        var packet = toPacket(obj);
+        logIncoming('local mesh node', obj['sender'], obj['receiver'], obj['message']);
+        pushToSockets(packet);
+        pushToGateways(packet);
+        logDone();
+    } else if(hasHandshakeJson(input)) {
+        var handshakeObj = JSON.parse(
+            input.substring(
+                input.indexOf('{"handshakeMessage" : '),
+                input.indexOf('}}') + 2
+        )
+        )['handshakeMessage'];
 
-      console.log('Handshake conditional entered...');
+        console.log('Handshake conditional entered...');
 
-      if(handshakeObj['message'] == 'OUT => CLUSTER_INFO_UPDATE') {
-          console.log('Out');
-          console.log(handshakeObj['message']);
-          console.log(handshakeObj['partnerId']);
-      } else if (handshakeObj['message'] == 'IN <= CLUSTER_WELCOME') {
-          console.log('In');
-          console.log(handshakeObj['message']);
-          console.log(handshakeObj['nodeId']);
-      }
-  } else {
-      console.log('Unrecognized packet, logging below');
-      console.log(input);
-  }
+        if(handshakeObj['message'] == 'OUT => CLUSTER_INFO_UPDATE') {
+            console.log('Out');
+            console.log(handshakeObj['message']);
+            console.log(handshakeObj['partnerId']);
+        } else if (handshakeObj['message'] == 'IN <= CLUSTER_WELCOME') {
+            console.log('In');
+            console.log(handshakeObj['message']);
+            console.log(handshakeObj['nodeId']);
+        }
+    } else {
+        console.log('Unrecognized packet, logging below');
+        console.log(input);
+    }
 }
 
 function incomingFromSocket(packet, socket) {
-  logIncoming('socket client', clientAddress(socket), toTargetId(packet), toMessage(packet));
-  pushToSerial(packet);
-  pushToSockets(packet);
-  pushToGateways(packet);
-  logDone();
+    logIncoming('socket client', clientAddress(socket), toTargetId(packet), toMessage(packet));
+    pushToSerial(packet);
+    pushToSockets(packet);
+    pushToGateways(packet);
+    logDone();
 }
 
 function incomingFromGateway(packet, socket) {
-  logIncoming('gateway', clientAddress(socket), toTargetId(packet), toMessage(packet));
-  pushToSerial(packet);
-  pushToSockets(packet);
-  logDone();
+    logIncoming('gateway', clientAddress(socket), toTargetId(packet), toMessage(packet));
+    pushToSerial(packet);
+    pushToSockets(packet);
+    logDone();
 }
 
 /* outgoing */
 function pushToSerial(packet) {
-  if(serialEnabled) {
-    logOutgoing('serial');
-    serialPort.write('action ' + toTargetId(packet) + ' gateway ' + toMessage(packet) + ' \r');
-  }
+    if(serialEnabled) {
+        logOutgoing('serial');
+        serialPort.write('action ' + toTargetId(packet) + ' gateway ' + toMessage(packet) + ' \r');
+    }
 }
 
 function pushToSockets(packet) {
-  logOutgoing('websocket clients');
-  io.emit(localSocket, packet);
+    logOutgoing('websocket clients');
+    io.emit(localSocket, packet);
 }
 
 function pushToGateways(packet) {
-  logOutgoing('gateways');
-  for(var address in gateways) {
-    gateways[address].emit(gatewaySocket, packet);
-  }
+    logOutgoing('gateways');
+    for(var address in gateways) {
+        gateways[address].emit(gatewaySocket, packet);
+    }
 }
 
 /* message parsing */
 function toObject(input) {
-  return JSON.parse(
-    input.substring(
-      input.indexOf('{ "gateway-message":'),
-      input.indexOf('}}') + 2
+    return JSON.parse(
+        input.substring(
+            input.indexOf('{ "gateway-message":'),
+            input.indexOf('}}') + 2
     )
-  )['gateway-message'];
+    )['gateway-message'];
 }
 
 function toPacket(obj) {
-  return obj['sender'] + '-' + obj['receiver'] + '-' + obj['message'];
+    return obj['sender'] + '-' + obj['receiver'] + '-' + obj['message'];
 }
 
 function toTargetId(packet) {
-  return packet.substring(0, packet.indexOf('-'));
+    return packet.substring(0, packet.indexOf('-'));
 }
 
 function toMessage(packet) {
-  return packet.substring(packet.indexOf('-')+1);
+    return packet.substring(packet.indexOf('-')+1);
 }
 
 /* logs */
 function log(out) {
-  var now = new Date();
-  console.log(
-    '[' +
-    pad(now.getMonth() + 1) + '-' +
-    pad(now.getDate()) + '-' +
-    now.getFullYear() + ' ' +
-    pad(now.getHours()) + ':' +
-    pad(now.getMinutes()) + ':' +
-    pad(now.getSeconds()) + '] ' +
-    out
-  );
+    var now = new Date();
+    console.log(
+        '[' +
+        pad(now.getMonth() + 1) + '-' +
+        pad(now.getDate()) + '-' +
+        now.getFullYear() + ' ' +
+        pad(now.getHours()) + ':' +
+        pad(now.getMinutes()) + ':' +
+        pad(now.getSeconds()) + '] ' +
+        out
+    );
 }
 
 function logDone() {
-  log('Done.');
+    log('Done.');
 }
 
 function logIncoming(source, sender, target, message) {
-  log('Incoming from ' + source + ' [' + sender + '], message \'' + message + '\' for target ' + target);
+    log('Incoming from ' + source + ' [' + sender + '], message \'' + message + '\' for target ' + target);
 }
 
 function logOutgoing(dest) {
-  log('Pushing to ' + dest + '...');
+    log('Pushing to ' + dest + '...');
 }
 
 /* utilities */
 function pad(number) {
-  return ('0' + number).slice(-2);
+    return ('0' + number).slice(-2);
 }
 
 function isValidPort(input) {
-  return !isNaN(input);
+    return !isNaN(input);
 }
 
 function clientAddress(socket) {
-  return socket.handshake.query.clientAddress;
+    return socket.handshake.query.clientAddress;
 }
 
 function hasGatewayJson(input) {
-  return input.indexOf('{ "gateway-message":') > 1;
+    return input.indexOf('{ "gateway-message":') > 1;
 }
 
 function hasHandshakeJson(input) {
-  return input.indexOf('{"handshakeMessage" :') > 1;
+    return input.indexOf('{"handshakeMessage" :') > 1;
 }
 
 function exitWithInfo(info) {
-  console.log(info);
-  process.exit(0);
+    console.log(info);
+    process.exit(0);
 }
