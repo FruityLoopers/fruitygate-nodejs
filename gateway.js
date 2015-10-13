@@ -135,13 +135,37 @@ function runSocketServer() {
 
 /* incoming */
 function incomingFromSerial(input) {
+
   if(hasGatewayJson(input)) {
+    console.log('Gateway conditional entered...');
     var obj = toObject(input);
     var packet = toPacket(obj);
     logIncoming('local mesh node', obj['sender'], obj['receiver'], obj['message']);
     pushToSockets(packet);
     pushToGateways(packet);
     logDone();
+  } else if(hasHandshakeJson(input)) {
+      var handshakeObj = JSON.parse(
+          input.substring(
+              input.indexOf('{"handshakeMessage" : '),
+              input.indexOf('}}') + 2
+          )
+      )['handshakeMessage'];
+
+      console.log('Handshake conditional entered...');
+
+      if(handshakeObj['message'] == 'OUT => CLUSTER_INFO_UPDATE') {
+          console.log('Out');
+          console.log(handshakeObj['message']);
+          console.log(handshakeObj['partnerId']);
+      } else if (handshakeObj['message'] == 'IN <= CLUSTER_WELCOME') {
+          console.log('In');
+          console.log(handshakeObj['message']);
+          console.log(handshakeObj['nodeId']);
+      }
+  } else {
+      console.log('Unrecognized packet, logging below');
+      console.log(input);
   }
 }
 
@@ -191,7 +215,7 @@ function toObject(input) {
 }
 
 function toPacket(obj) {
-  return obj['receiver'] + '-' + obj['message'];
+  return obj['sender'] + '-' + obj['receiver'] + '-' + obj['message'];
 }
 
 function toTargetId(packet) {
@@ -244,6 +268,10 @@ function clientAddress(socket) {
 
 function hasGatewayJson(input) {
   return input.indexOf('{ "gateway-message":') > 1;
+}
+
+function hasHandshakeJson(input) {
+  return input.indexOf('{"handshakeMessage" :') > 1;
 }
 
 function exitWithInfo(info) {

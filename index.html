@@ -30,13 +30,19 @@
 
         socket.on(localSocket, function(input){
           var targetNodeId = parseTargetNodeId(input);
+          console.log('targetNodeId');
+          console.log(targetNodeId);
           var message = parseMessage(input);
+          console.log('message');
+          console.log(message);
           $('#messages').append($('<li>')
             .html('<strong>Target node ID:</strong> ' + targetNodeId + '&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<strong>Message:</strong> ' + message));
         });
       });
 
       function parseTargetNodeId(input) {
+        console.log('input');
+        console.log(input);
         return input.substring(0, input.indexOf('-'));
       }
 
