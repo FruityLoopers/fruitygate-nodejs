@@ -8,14 +8,30 @@
       form { background: #ccc; padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form input { border: 0; padding: 0.6em; width: 33%; margin-right: .5%; }
       form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 0.6em; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { padding: 5px 10px; }
-      #messages li:nth-child(odd) { background: #eee; }
+      #nodes { list-style-type: none; margin: 0; padding: 0; }
+      #nodes li { padding: 5px 10px; }
+      #nodes li:nth-child(odd) { background: #eee; }
+      .node-container .status-light {
+         width: 20px;
+         height: 20px;
+       }
+      .node-name {
+         font-size: 1.4em;
+       }
+      .node-container {
+         height: 60px;
+       }
     </style>
+
+  <!-- Compiled and minified CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.1/css/materialize.min.css">
+
+  <!-- Compiled and minified JavaScript -->
   </head>
   <body>
     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.1/js/materialize.min.js"></script>
     <script>
       $(document).ready(function(){
         var socket = io({ query: 'clientAddress=a browser window'});
@@ -29,14 +45,14 @@
         });
 
         socket.on(localSocket, function(input){
-          var targetNodeId = parseTargetNodeId(input);
-          console.log('targetNodeId');
-          console.log(targetNodeId);
-          var message = parseMessage(input);
-          console.log('message');
-          console.log(message);
-          $('#messages').append($('<li>')
-            .html('<strong>Target node ID:</strong> ' + targetNodeId + '&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;<strong>Message:</strong> ' + message));
+          console.log(input);
+          var inputObj = JSON.parse(input);
+          //var targetNodeId = parseTargetNodeId(input);
+          //console.log(targetNodeId);
+          //var message = parseMessage(input);
+          //console.log(message);
+          $('#nodes').append($('<li>')
+            .html('<strong>Message: </strong> ' + input));
         });
       });
 
@@ -49,8 +65,20 @@
       function parseMessage(input) {
         return input.substring(input.indexOf('-')+1);
       }
+
     </script>
-    <ul id="messages"></ul>
+    <ul id="nodes"></ul>
+    <div class="row">
+        <div class="col s12 m3">
+            <div class="row">
+                <div class="card-panel white node-container">
+                    <span class="left node-name">Urban Farmer</span>
+                    <span class="right"><a class="btn-floating status-light waves-effect waves-light red"></a></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <form action="#">
       Target node ID: <input id="targetNodeId" maxlength="5" autocomplete="off">
       Message: <input id="message" maxlength="10" autocomplete="off">

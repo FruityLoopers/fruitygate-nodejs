@@ -138,7 +138,7 @@ function incomingFromSerial(input) {
     if(hasGatewayJson(input)) {
         console.log('Gateway conditional entered...');
         var gatewayObj = gatewayJsonToObject(input);
-        var packet = toGatewayPacket(gatewayObj);
+        var packet = toPacket(gatewayObj);
         logIncoming('local mesh node', gatewayObj['sender'], gatewayObj['receiver'], gatewayObj['message']);
         pushToSockets(packet);
         pushToGateways(packet);
@@ -148,16 +148,15 @@ function incomingFromSerial(input) {
 
         console.log('Handshake conditional entered...');
 
+        var packet = toPacket(handshakeObj);
         if(handshakeObj['message'] == 'OUT => CLUSTER_INFO_UPDATE') {
-            var packet = toHandshakePacket(handshakeObj);
             console.log('Out');
-            console.log(handshakeObj['message']);
-            console.log(handshakeObj['nodeId']);
         } else if (handshakeObj['message'] == 'IN <= CLUSTER_WELCOME') {
             console.log('In');
-            console.log(handshakeObj['message']);
-            console.log(handshakeObj['nodeId']);
         }
+        console.log(handshakeObj['message']);
+        console.log(handshakeObj['nodeId']);
+
         pushToSockets(packet);
         pushToGateways(packet);
         logDone();
