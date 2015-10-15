@@ -135,34 +135,32 @@ function runSocketServer() {
 
 /* incoming */
 function incomingFromSerial(input) {
-
     if(hasGatewayJson(input)) {
         console.log('Gateway conditional entered...');
-        var obj = toObject(input);
-        var packet = toPacket(obj);
-        logIncoming('local mesh node', obj['sender'], obj['receiver'], obj['message']);
+        var gatewayObj = gatewayJsonToObject(input);
+        var packet = toGatewayPacket(gatewayObj);
+        logIncoming('local mesh node', gatewayObj['sender'], gatewayObj['receiver'], gatewayObj['message']);
         pushToSockets(packet);
         pushToGateways(packet);
         logDone();
     } else if(hasHandshakeJson(input)) {
-        var handshakeObj = JSON.parse(
-            input.substring(
-                input.indexOf('{"handshakeMessage" : '),
-                input.indexOf('}}') + 2
-        )
-        )['handshakeMessage'];
+        var handshakeObj = handshakeJsonToObject(input);
 
         console.log('Handshake conditional entered...');
 
         if(handshakeObj['message'] == 'OUT => CLUSTER_INFO_UPDATE') {
+            var packet = toHandshakePacket(handshakeObj);
             console.log('Out');
             console.log(handshakeObj['message']);
-            console.log(handshakeObj['partnerId']);
+            console.log(handshakeObj['nodeId']);
         } else if (handshakeObj['message'] == 'IN <= CLUSTER_WELCOME') {
             console.log('In');
             console.log(handshakeObj['message']);
             console.log(handshakeObj['nodeId']);
         }
+        pushToSockets(packet);
+        pushToGateways(packet);
+        logDone();
     } else {
         console.log('Unrecognized packet, logging below');
         console.log(input);
@@ -205,17 +203,34 @@ function pushToGateways(packet) {
 }
 
 /* message parsing */
-function toObject(input) {
+function gatewayJsonToObject(input) {
     return JSON.parse(
         input.substring(
             input.indexOf('{ "gateway-message":'),
             input.indexOf('}}') + 2
-    )
+        )
     )['gateway-message'];
 }
 
+function handshakeJsonToObject(input) {
+    return JSON.parse(
+        input.substring(
+            input.indexOf('{"handshakeMessage" : '),
+            input.indexOf('}}') + 2
+        )
+    )['handshakeMessage'];
+}
+
 function toPacket(obj) {
-    return obj['sender'] + '-' + obj['receiver'] + '-' + obj['message'];
+    return JSON.stringify(obj);
+}
+
+function toGatewayPacket(obj) {
+    return obj['receiver'] + '-' + obj['message'];
+}
+
+function toHandshakePacket(obj) {
+    return obj[''] + '-' + obj['message'];
 }
 
 function toTargetId(packet) {
