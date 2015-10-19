@@ -8,9 +8,6 @@
       form { background: #ccc; padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form input { border: 0; padding: 0.6em; width: 33%; margin-right: .5%; }
       form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 0.6em; }
-      #nodes { list-style-type: none; margin: 0; padding: 0; }
-      #nodes li { padding: 5px 10px; }
-      #nodes li:nth-child(odd) { background: #eee; }
       .node-container .status-light {
          width: 20px;
          height: 20px;
@@ -33,28 +30,44 @@
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.1/js/materialize.min.js"></script>
     <script>
-      $(document).ready(function(){
+    $(document).ready(function(){
         var socket = io({ query: 'clientAddress=a browser window'});
         var localSocket = 'local packet';
 
         $('form').submit(function(event){
-          socket.emit(localSocket, $('#targetNodeId').val() + '-' + $('#message').val());
-          $('#targetNodeId').val('');
-          $('#message').val('');
-          event.preventDefault();
+            socket.emit(localSocket, $('#targetNodeId').val() + '-' + $('#message').val());
+            $('#targetNodeId').val('');
+            $('#message').val('');
+            event.preventDefault();
         });
 
         socket.on(localSocket, function(input){
-          console.log(input);
-          var inputObj = JSON.parse(input);
-          //var targetNodeId = parseTargetNodeId(input);
-          //console.log(targetNodeId);
-          //var message = parseMessage(input);
-          //console.log(message);
-          $('#nodes').append($('<li>')
-            .html('<strong>Message: </strong> ' + input));
+            console.log(input);
+            var inputObj = JSON.parse(input);
+            //var targetNodeId = parseTargetNodeId(input);
+            //console.log(targetNodeId);
+            //var message = parseMessage(input);
+            console.log(inputObj['message']);
+            if(inputObj['message'] == 'IN <= CLUSTER_WELCOME') {
+                $('#nodes').append($('<li>')
+                        .append($('<div>')
+                            .attr('id', inputObj['nodeId'])
+                            .addClass('card-panel white node-container')
+                            .append($('<span>')
+                                .addClass('left node-name')
+                                .html('<strong>' + inputObj['nodeId'] + '</strong>')
+                                )
+                            .append($('<span>')
+                                .addClass('right status-button')
+                                .html('<a class="btn-floating status-light waves-effect waves-light green"></a>')
+                                )));
+            } else if(inputObj['message'] == 'OUT => CLUSTER_INFO_UPDATE') {
+               $('div#' + inputObj['nodeId'] + ' span.status-button a')
+                   .removeClass('red orange green')
+                   .addClass('red')
+            }
         });
-      });
+    });
 
       function parseTargetNodeId(input) {
         console.log('input');
@@ -67,15 +80,16 @@
       }
 
     </script>
-    <ul id="nodes"></ul>
     <div class="row">
         <div class="col s12 m3">
-            <div class="row">
-                <div class="card-panel white node-container">
-                    <span class="left node-name">Urban Farmer</span>
-                    <span class="right"><a class="btn-floating status-light waves-effect waves-light red"></a></span>
-                </div>
-            </div>
+            <ul id="nodes">
+                <li>
+                    <div class="card-panel white node-container">
+                        <span class="left node-name">12345</span>
+                        <span class="right"><a class="btn-floating status-light waves-effect waves-light red"></a></span>
+                    </div>
+                </li>
+            </ul>
         </div>
     </div>
 

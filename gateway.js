@@ -160,6 +160,11 @@ function incomingFromSerial(input) {
         pushToSockets(packet);
         pushToGateways(packet);
         logDone();
+    } else if(hasPartnerStatusJson(input)) {
+        var statusObj = partnerStatusJsonToObject(input);
+
+        console.log('Status update detected');
+        console.log(input);
     } else {
         console.log('Unrecognized packet, logging below');
         console.log(input);
@@ -218,6 +223,18 @@ function handshakeJsonToObject(input) {
             input.indexOf('}}') + 2
         )
     )['handshakeMessage'];
+}
+
+function partnerStatusJsonToObject(input) {
+    console.log('about to substring...');
+    console.log(input);
+
+    return JSON.parse(
+        input.substring(
+            0,
+            input.indexOf('[Node.cpp')
+        )
+    );
 }
 
 function toPacket(obj) {
@@ -286,6 +303,10 @@ function hasGatewayJson(input) {
 
 function hasHandshakeJson(input) {
     return input.indexOf('{"handshakeMessage" :') > 1;
+}
+
+function hasPartnerStatusJson(input) {
+    return input.indexOf('partners') > 1;
 }
 
 function exitWithInfo(info) {
