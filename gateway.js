@@ -1,20 +1,16 @@
 var app = require('express')();
 var http = require('http').Server(app);
-var io = require('socket.io')(http);
 
 var serialport = require('serialport');
 var SerialPort = serialport.SerialPort;
 var serialPort;
 
-var allAddresses = ['0.0.0.0:3001', '0.0.0.0:3002', '0.0.0.0:3003'];
-var gateways = {};
-var thisAddress;
 var usage = 'Usage:\nnode gateway HTTP_PORT SERIAL_PORT\nnode gateway HTTP_PORT noserial\nnode gateway HTTP_PORT\nHint: Try \'node list\' to see a list of serial port names';
 
-var localSocket = 'local packet';
-var gatewaySocket = 'gateway packet';
-
 var serialEnabled;
+
+var NODES_IN_MESH = {};
+var LINE_HANDLERS = [];
 
 /* startup */
 processArgs();
@@ -83,66 +79,56 @@ function beginHttp(port) {
     if(isValidPort(port)) {
         log('Opening http port ' + port);
         http.listen(port, function(){
-            initAddress();
-            initGateways();
             runWebServer();
-            runSocketServer();
         });
     } else {
         exitWithInfo(usage);
     }
 }
 
-function initAddress() {
-    var address = http.address();
-    thisAddress = address['address'] + ':' + address['port'];
-    log('Serving clients on [' + thisAddress + ']');
-}
-
-function initGateways() {
-    allAddresses.forEach(function (address) {
-        if(address != thisAddress) {
-            gateways[address] = require("socket.io-client");
-            gateways[address] = gateways[address].connect('http://' + address, { query: 'clientAddress=' + thisAddress });
-            log('Listening to gateway [' + address + ']');
-        }
-    });
-}
-
 function runWebServer() {
     app.get('/', function(req, res){
         res.sendFile(__dirname + '/index.html');
     });
-}
 
-function runSocketServer() {
-    io.on('connection', function(socket){
-        log('Client [' + clientAddress(socket) + '] just connected');
+    app.get('/mesh-status', function(req,res){
+      var now = new Date();
+      var nodes = {};
+      for( k in NODES_IN_MESH ){
+        node = NODES_IN_MESH[k];
+        nodes[node.nodeId] = {
+          lastSeen: node.lastSeen,
+          lastSeenAgo: "" + (now - node.lastSeen)/1000 + " seconds ago"
+        };
+      }
 
-        socket.on('disconnect', function(){
-            log('Client [' + clientAddress(socket) + '] just disconnected');
-        });
-
-        socket.on(localSocket, function(input){
-            incomingFromSocket(input, socket);
-        });
-
-        socket.on(gatewaySocket, function(input){
-            incomingFromGateway(input, socket);
-        });
+      res.send(JSON.stringify({nodes:nodes}));
     });
 }
+var HEARTBEAT_REGEX = /HEARTBEAT RECEIVED from nodeId:(\d+)/;
+LINE_HANDLERS.push( function heartbeatHandler(input){
+  var regexMatch = input.match(HEARTBEAT_REGEX);
+  if( regexMatch ){
+    var nodeId = regexMatch[1];
+    NODES_IN_MESH[nodeId] = {
+      nodeId: nodeId,
+      lastSeen: new Date()
+    };
+  }
+});
 
 /* incoming */
 function incomingFromSerial(input) {
+    LINE_HANDLERS.forEach( function(handler){
+      handler(input);
+    });
+
+
     if(hasGatewayJson(input)) {
         console.log('Gateway conditional entered...');
         var gatewayObj = gatewayJsonToObject(input);
         var packet = toPacket(gatewayObj);
         logIncoming('local mesh node', gatewayObj['sender'], gatewayObj['receiver'], gatewayObj['message']);
-        pushToSockets(packet);
-        pushToGateways(packet);
-        logDone();
     } else if(hasHandshakeJson(input)) {
         var handshakeObj = handshakeJsonToObject(input);
 
@@ -156,34 +142,10 @@ function incomingFromSerial(input) {
         }
         console.log(handshakeObj['message']);
         console.log(handshakeObj['nodeId']);
-
-        pushToSockets(packet);
-        pushToGateways(packet);
-        logDone();
-    } else if(hasPartnerStatusJson(input)) {
-        var statusObj = partnerStatusJsonToObject(input);
-
-        console.log('Status update detected');
-        console.log(input);
     } else {
         console.log('Unrecognized packet, logging below');
         console.log(input);
     }
-}
-
-function incomingFromSocket(packet, socket) {
-    logIncoming('socket client', clientAddress(socket), toTargetId(packet), toMessage(packet));
-    pushToSerial(packet);
-    pushToSockets(packet);
-    pushToGateways(packet);
-    logDone();
-}
-
-function incomingFromGateway(packet, socket) {
-    logIncoming('gateway', clientAddress(socket), toTargetId(packet), toMessage(packet));
-    pushToSerial(packet);
-    pushToSockets(packet);
-    logDone();
 }
 
 /* outgoing */
@@ -191,18 +153,6 @@ function pushToSerial(packet) {
     if(serialEnabled) {
         logOutgoing('serial');
         serialPort.write('action ' + toTargetId(packet) + ' gateway ' + toMessage(packet) + ' \r');
-    }
-}
-
-function pushToSockets(packet) {
-    logOutgoing('websocket clients');
-    io.emit(localSocket, packet);
-}
-
-function pushToGateways(packet) {
-    logOutgoing('gateways');
-    for(var address in gateways) {
-        gateways[address].emit(gatewaySocket, packet);
     }
 }
 
@@ -272,10 +222,6 @@ function log(out) {
     );
 }
 
-function logDone() {
-    log('Done.');
-}
-
 function logIncoming(source, sender, target, message) {
     log('Incoming from ' + source + ' [' + sender + '], message \'' + message + '\' for target ' + target);
 }
@@ -293,20 +239,12 @@ function isValidPort(input) {
     return !isNaN(input);
 }
 
-function clientAddress(socket) {
-    return socket.handshake.query.clientAddress;
-}
-
 function hasGatewayJson(input) {
     return input.indexOf('{ "gateway-message":') > 1;
 }
 
 function hasHandshakeJson(input) {
     return input.indexOf('{"handshakeMessage" :') > 1;
-}
-
-function hasPartnerStatusJson(input) {
-    return input.indexOf('partners') > 1;
 }
 
 function exitWithInfo(info) {
