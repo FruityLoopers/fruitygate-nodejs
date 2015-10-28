@@ -2,7 +2,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 
-var voteRepository = require('voteRepository')();
+var voteRepository = require('./vote_repository')();
 
 var serialport = require('serialport');
 var SerialPort = serialport.SerialPort;
@@ -112,6 +112,8 @@ function runWebServer(app) {
 
     app.use('/assets',express.static('assets'));
 }
+
+
 var HEARTBEAT_REGEX = /HEARTBEAT RECEIVED from nodeId:(\d+)/;
 LINE_HANDLERS.push( function heartbeatHandler(input){
   var regexMatch = input.match(HEARTBEAT_REGEX);
@@ -122,6 +124,19 @@ LINE_HANDLERS.push( function heartbeatHandler(input){
       lastSeen: new Date()
     };
   }
+});
+
+var VOTE_REGEX = /Gateway \d+ received voter message from (\d+)/;
+LINE_HANDLERS.push(function votesHandler(input){
+    var regexMatch = input.match(VOTE_REGEX);
+    if( regexMatch ){
+        var nodeId = regexMatch[1];
+        var tagId = 'TODO (no tag information is currently in vote messages)';
+        voteRepository.recordVote({
+            nodeId: nodeId,
+            tagId: tagId
+        });
+    }
 });
 
 /* incoming */
