@@ -110,6 +110,12 @@ function runWebServer(app) {
       res.send(JSON.stringify({nodes:nodes}));
     });
 
+    app.get('/votes', function(req,res){
+        voteRepository.getAllVotes().then( function(votes){
+            res.send(votes.toJSON());
+        });
+    });
+
     app.use('/assets',express.static('assets'));
 }
 
