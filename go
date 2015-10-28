@@ -7,7 +7,7 @@ function helptext {
     echo ""
     echo "Available commands are:"
     echo "    build               compile the javascript app"
-    echo "    gateway <tty.file>  run the fruitybrain gateway app on port 3001"
+    echo "    gateway <tty.file>  run the fruitybrain gateway app at http://localhost:3001"
     echo "    term <tty.file>     run the cli terminal"
 }
 
