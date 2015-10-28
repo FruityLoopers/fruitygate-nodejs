@@ -98,6 +98,7 @@ function runWebServer(app) {
       for( k in NODES_IN_MESH ){
         var node = NODES_IN_MESH[k];
         nodes[node.nodeId] = {
+          nodeId: node.nodeId,
           lastSeen: node.lastSeen,
           lastSeenAgo: "" + (now - node.lastSeen)/1000 + " seconds ago"
         };
@@ -105,20 +106,20 @@ function runWebServer(app) {
 
       
       // FAKE DATA FOR TESTING
-      nodes = {
-        foo: { 
-          nodeId: '5141',
-          lastSeen: new Date() - Math.random()*14000
-        },
-        bar: { 
-          nodeId: '2612',
-          lastSeen: new Date() - Math.random()*14000
-        },
-        baz: {
-          nodeId: '8170',
-          lastSeen: new Date() - Math.random()*14000
-        },
-      };
+      //nodes = {
+        //foo: { 
+          //nodeId: '5141',
+          //lastSeen: new Date() - Math.random()*14000
+        //},
+        //bar: { 
+          //nodeId: '2612',
+          //lastSeen: new Date() - Math.random()*14000
+        //},
+        //baz: {
+          //nodeId: '8170',
+          //lastSeen: new Date() - Math.random()*14000
+        //},
+      //};
 
       res.send(JSON.stringify({nodes:nodes}));
     });
