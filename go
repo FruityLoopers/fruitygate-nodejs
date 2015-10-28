@@ -9,6 +9,7 @@ function helptext {
     echo "    build               compile the javascript app"
     echo "    gateway <tty.file>  run the fruitybrain gateway app at http://localhost:3001"
     echo "    term <tty.file>     run the cli terminal"
+    echo "    knex <command>      run the knex cli"
 }
 
 function build(){
@@ -17,7 +18,7 @@ function build(){
 }
 
 function gateway(){
-  build
+    build
 	node gateway 3001 "$@"
 }
 
@@ -25,6 +26,9 @@ function term(){
 	node cli "$@"
 }
 
+function knex(){
+   node_modules/knex/lib/bin/cli.js "$@"
+}
 
 case "$1" in
     build) build
@@ -32,6 +36,8 @@ case "$1" in
     gateway) gateway
     ;;
     term) term
+    ;;
+    knex) knex
     ;;
     *) helptext
     ;;
