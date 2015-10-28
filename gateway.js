@@ -2,6 +2,8 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 
+var voteRepository = require('voteRepository')();
+
 var serialport = require('serialport');
 var SerialPort = serialport.SerialPort;
 var serialPort;
@@ -104,22 +106,6 @@ function runWebServer(app) {
         };
       }
 
-      
-      // FAKE DATA FOR TESTING
-      //nodes = {
-        //foo: { 
-          //nodeId: '5141',
-          //lastSeen: new Date() - Math.random()*14000
-        //},
-        //bar: { 
-          //nodeId: '2612',
-          //lastSeen: new Date() - Math.random()*14000
-        //},
-        //baz: {
-          //nodeId: '8170',
-          //lastSeen: new Date() - Math.random()*14000
-        //},
-      //};
 
       res.send(JSON.stringify({nodes:nodes}));
     });

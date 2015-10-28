@@ -29,3 +29,5 @@ node_modules
 
 /assets/bundle.js
 /assets/bundle.js.map
+
+/fruitybrain.db.sqlite3
