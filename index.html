@@ -19,79 +19,11 @@
          height: 60px;
        }
     </style>
-
-  <!-- Compiled and minified CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.1/css/materialize.min.css">
-
-  <!-- Compiled and minified JavaScript -->
+  <link rel="stylesheet" href="assets/materialize.min.css">
   </head>
   <body>
-    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.1/js/materialize.min.js"></script>
-    <script>
-    $(document).ready(function(){
-        var socket = io({ query: 'clientAddress=a browser window'});
-        var localSocket = 'local packet';
-
-        $('form').submit(function(event){
-            socket.emit(localSocket, $('#targetNodeId').val() + '-' + $('#message').val());
-            $('#targetNodeId').val('');
-            $('#message').val('');
-            event.preventDefault();
-        });
-
-        socket.on(localSocket, function(input){
-            console.log(input);
-            var inputObj = JSON.parse(input);
-            //var targetNodeId = parseTargetNodeId(input);
-            //console.log(targetNodeId);
-            //var message = parseMessage(input);
-            console.log(inputObj['message']);
-            if(inputObj['message'] == 'IN <= CLUSTER_WELCOME') {
-                $('#nodes').append($('<li>')
-                        .append($('<div>')
-                            .attr('id', inputObj['nodeId'])
-                            .addClass('card-panel white node-container')
-                            .append($('<span>')
-                                .addClass('left node-name')
-                                .html('<strong>' + inputObj['nodeId'] + '</strong>')
-                                )
-                            .append($('<span>')
-                                .addClass('right status-button')
-                                .html('<a class="btn-floating status-light waves-effect waves-light green"></a>')
-                                )));
-            } else if(inputObj['message'] == 'OUT => CLUSTER_INFO_UPDATE') {
-               $('div#' + inputObj['nodeId'] + ' span.status-button a')
-                   .removeClass('red orange green')
-                   .addClass('red')
-            }
-        });
-    });
-
-      function parseTargetNodeId(input) {
-        console.log('input');
-        console.log(input);
-        return input.substring(0, input.indexOf('-'));
-      }
-
-      function parseMessage(input) {
-        return input.substring(input.indexOf('-')+1);
-      }
-
-    </script>
-    <div class="row">
-        <div class="col s12 m3">
-            <ul id="nodes">
-                <li>
-                    <div class="card-panel white node-container">
-                        <span class="left node-name">12345</span>
-                        <span class="right"><a class="btn-floating status-light waves-effect waves-light red"></a></span>
-                    </div>
-                </li>
-            </ul>
-        </div>
-    </div>
+    <main/>
+    <script src="assets/bundle.js"></script>
 
     <form action="#">
       Target node ID: <input id="targetNodeId" maxlength="5" autocomplete="off">

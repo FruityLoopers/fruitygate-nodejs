@@ -1,4 +1,5 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 
 var serialport = require('serialport');
@@ -79,14 +80,14 @@ function beginHttp(port) {
     if(isValidPort(port)) {
         log('Opening http port ' + port);
         http.listen(port, function(){
-            runWebServer();
+            runWebServer(app);
         });
     } else {
         exitWithInfo(usage);
     }
 }
 
-function runWebServer() {
+function runWebServer(app) {
     app.get('/', function(req, res){
         res.sendFile(__dirname + '/index.html');
     });
@@ -95,15 +96,34 @@ function runWebServer() {
       var now = new Date();
       var nodes = {};
       for( k in NODES_IN_MESH ){
-        node = NODES_IN_MESH[k];
+        var node = NODES_IN_MESH[k];
         nodes[node.nodeId] = {
           lastSeen: node.lastSeen,
           lastSeenAgo: "" + (now - node.lastSeen)/1000 + " seconds ago"
         };
       }
 
+      
+      // FAKE DATA FOR TESTING
+      nodes = {
+        foo: { 
+          nodeId: '5141',
+          lastSeen: new Date() - Math.random()*14000
+        },
+        bar: { 
+          nodeId: '2612',
+          lastSeen: new Date() - Math.random()*14000
+        },
+        baz: {
+          nodeId: '8170',
+          lastSeen: new Date() - Math.random()*14000
+        },
+      };
+
       res.send(JSON.stringify({nodes:nodes}));
     });
+
+    app.use('/assets',express.static('assets'));
 }
 var HEARTBEAT_REGEX = /HEARTBEAT RECEIVED from nodeId:(\d+)/;
 LINE_HANDLERS.push( function heartbeatHandler(input){
