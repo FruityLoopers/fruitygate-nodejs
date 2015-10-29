@@ -25,15 +25,15 @@ function build(){
 function gateway(){
     build
     migrateDB
-	node gateway 3001 "$@"
+	node gateway 3001 $1
 }
 
 function term(){
-	node cli "$@"
+	node cli $1
 }
 
 function knex(){
-   node_modules/knex/lib/bin/cli.js "$@"
+   node_modules/knex/lib/bin/cli.js $1
 }
 
 case "$1" in
@@ -41,11 +41,11 @@ case "$1" in
     ;;
     migrate) migrateDB
     ;;
-    gateway) gateway
+    gateway) gateway $2
     ;;
-    term) term
+    term) term $2
     ;;
-    knex) knex
+    knex) knex $2
     ;;
     *) helptext
     ;;
