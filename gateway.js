@@ -132,12 +132,13 @@ LINE_HANDLERS.push( function heartbeatHandler(input){
   }
 });
 
-var VOTE_REGEX = /Gateway \d+ received voter message from (\d+)/;
+var VOTE_REGEX = /Received message from (\d+) with userId (\d+)/;
+
 LINE_HANDLERS.push(function votesHandler(input){
     var regexMatch = input.match(VOTE_REGEX);
     if( regexMatch ){
         var nodeId = regexMatch[1];
-        var tagId = 'TODO (no tag information is currently in vote messages)';
+        var tagId = regexMatch[2];
         voteRepository.recordVote({
             nodeId: nodeId,
             tagId: tagId
