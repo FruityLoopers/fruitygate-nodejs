@@ -1,3 +1,4 @@
+var _ = require('underscore');
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
@@ -99,13 +100,11 @@ function runWebServer(app) {
       var nodes = {};
       for( k in NODES_IN_MESH ){
         var node = NODES_IN_MESH[k];
-        nodes[node.nodeId] = {
-          nodeId: node.nodeId,
-          lastSeen: node.lastSeen,
-          lastSeenAgo: "" + (now - node.lastSeen)/1000 + " seconds ago"
-        };
+        nodes[node.nodeId] = _.extend( 
+          _.pick(node,'nodeId','lastSeen','inConn','outConns'), 
+          {lastSeenAgo: "" + (now - node.lastSeen)/1000 + " seconds ago"}
+        );
       }
-
 
       res.send(JSON.stringify({nodes:nodes}));
     });
@@ -120,14 +119,19 @@ function runWebServer(app) {
 }
 
 
-var HEARTBEAT_REGEX = /HEARTBEAT RECEIVED from nodeId:(\d+)/;
+var HEARTBEAT_REGEX = /HEARTBEAT RECEIVED from nodeId:(\d+) inConn:(\d+) outConns:\[([\d,]+)\]/;
 LINE_HANDLERS.push( function heartbeatHandler(input){
   var regexMatch = input.match(HEARTBEAT_REGEX);
   if( regexMatch ){
     var nodeId = regexMatch[1];
+    var inConn = regexMatch[2];
+    var outConns = regexMatch[3].split(",");
+
     NODES_IN_MESH[nodeId] = {
       nodeId: nodeId,
-      lastSeen: new Date()
+      lastSeen: new Date(),
+      inConn: inConn,
+      outConns: outConns
     };
   }
 });

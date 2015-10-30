@@ -1,3 +1,4 @@
+import _ from 'underscore';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Main from './views/mainView.jsx';
@@ -14,10 +15,10 @@ function render(nodes){
 
 function nodesFromMeshStatusResponse(meshStatus){
   return objValues(meshStatus.nodes).map( function(node){
-    return {
-      nodeId: node.nodeId,
-      lastSeen: new Date(node.lastSeen)
-    };
+    return _.extend( 
+      _.pick(node,'nodeId','inConn','outConns'), 
+      { lastSeen: new Date(node.lastSeen) }
+    );
   });
 }
 

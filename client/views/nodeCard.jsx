@@ -10,7 +10,11 @@ export default class NodeCard extends React.Component {
 
     return <li>
             <div className="card-panel node-container" style={cardStyle}>
+
+              <span className="left">[{node.inConn}] => </span>
               <span className="left node-name">{node.nodeId}</span>
+              <span className="left"> => [{node.outConns.join(",")}]</span>
+
               <span className="right">
                 heartbeat {lastSeenInSecs} seconds ago
               </span>
