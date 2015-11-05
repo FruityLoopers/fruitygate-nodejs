@@ -175,7 +175,6 @@ function incomingFromSerial(input) {
         console.log(handshakeObj['message']);
         console.log(handshakeObj['nodeId']);
     } else {
-        console.log('Unrecognized packet, logging below');
         console.log(input);
     }
 }
