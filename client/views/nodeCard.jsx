@@ -23,8 +23,8 @@ export default class NodeCard extends React.Component {
   }
 
   backgroundColor(){
-    // anything staler than 10 seconds should be dark red
-    const stalenessBoundary = 10000; 
+    // anything staler than 15 seconds should be dark red
+    const stalenessBoundary = 20000;
 
     const normalizedStaleness = Math.min(
         1,
