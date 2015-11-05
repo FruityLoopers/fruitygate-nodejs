@@ -18,18 +18,18 @@ function migrateDB(){
 }
 
 function build(){
-  npm install 
+  npm install
   node_modules/.bin/webpack
 }
 
 function gateway(){
     build
     migrateDB
-	node gateway 3001 $1
+    node gateway 3001 $1
 }
 
 function term(){
-	node cli $1
+    node cli $1
 }
 
 function knex(){

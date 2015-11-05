@@ -100,8 +100,8 @@ function runWebServer(app) {
       var nodes = {};
       for( k in NODES_IN_MESH ){
         var node = NODES_IN_MESH[k];
-        nodes[node.nodeId] = _.extend( 
-          _.pick(node,'nodeId','lastSeen','inConn','outConns'), 
+        nodes[node.nodeId] = _.extend(
+          _.pick(node,'nodeId','lastSeen','inConn','outConns'),
           {lastSeenAgo: "" + (now - node.lastSeen)/1000 + " seconds ago"}
         );
       }
