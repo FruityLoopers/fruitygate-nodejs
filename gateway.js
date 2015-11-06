@@ -1,7 +1,8 @@
 var _ = require('underscore');
 var express = require('express');
 var app = express();
-var http = require('http').Server(app);
+var server = require('http').Server(app);
+var http = require('http');
 
 var voteRepository = require('./vote_repository')();
 
@@ -82,7 +83,7 @@ function beginSerial(port) {
 function beginHttp(port) {
     if(isValidPort(port)) {
         log('Opening http port ' + port);
-        http.listen(port, function(){
+        server.listen(port, function(){
             runWebServer(app);
         });
     } else {
@@ -133,8 +134,77 @@ LINE_HANDLERS.push( function heartbeatHandler(input){
       inConn: inConn,
       outConns: outConns
     };
+
+  sendVotes();
+
   }
 });
+
+function httpPost(data) {
+    var post_options = {
+        host: 'localhost',
+        port: 3001,
+        path: '/post',
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+        }
+    };
+
+    var post_request = http.request(post_options, function(response) {
+        console.log('Sent Vote');
+        response.setEncoding('utf8');
+        response.on('data', function(chunk) {
+            console.log('Response is ' + chunk);
+        });
+    });
+
+    post_request.write(data);
+    post_request.end();
+}
+
+function getVotes() {
+    var get_options = {
+        host: 'localhost',
+        port: 3001,
+        path: '/votes',
+        method: 'GET'
+    };
+
+    var request = http.get(get_options, function(response) {
+        //var pageData = "";
+        //response.setEncoding('utf8');
+        //response.on('data', function (chunk) {
+        //    pageData += chunk;
+        //});
+        //response.on('end', function(){
+        //    console.log(pageData);
+        //});
+    });
+
+    request.end();
+}
+
+
+function sendVotes() {
+    //var votes = JSON.parse(getVotes()); // json array
+    var voterId = 3565;
+    var voterId2 = 3566;
+    var voterId3 = 3567;
+    var post_data = JSON.stringify(
+    {
+        'voting_results':
+        [{
+            'box': 'Box1',
+            'votes':
+                [{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 },
+                { 'voter': voterId2, 'color': 'red', 'timestamp': 1447669800 },
+                { 'voter': voterId3, 'color': 'red', 'timestamp': 1447669800 }]
+        }]
+    });
+    httpPost(post_data);
+};
 
 var VOTE_REGEX = /Gateway (\d+) received voter message from (\d+) with userId (\d+)/;
 LINE_HANDLERS.push(function votesHandler(input){
