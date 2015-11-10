@@ -12,7 +12,7 @@ module.exports = function createVoteRepository(){
     }
 
     function getAllVotes(){
-        return Votes.fetchAll({'columns': ['nodeId', 'tagId', 'created_at']});
+        return Votes.fetchAll({'columns': ['voter', 'nodeId', 'created_at']});
     }
 
     return {

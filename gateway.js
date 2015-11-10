@@ -111,47 +111,71 @@ function runWebServer(app) {
     });
 
     app.get('/votes', function(req,res){
-        voteRepository.getAllVotes().then( function(votes){
-            // vote
+        voteRepository.getAllVotes().then(function(votes){
+            var transformed = [];
+            votes.forEach(function(vote) {
+                transformed.push({ 
+                    voter: vote.attributes.voter, 
+                    // should be, get color per node
+                    color:'green', 
+                    timestamp: vote.attributes.created_at
+                });
+            });
+
             var results = JSON.stringify(
-                {
-                    'voting_results':
-                    //[
-                        votes.toJSON()
-                        // for each vote in votes, 1. pull out voterId, 2. use NodeInfo to pull out green/red/yellow, 3. use the create time stamp
-                        //{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 },
-                        //{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 },
-                        //{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 }
-                    //]
-                }
+                {'voting_results': transformed}
             );
             res.send(results);
         });
     });
 
+    app.post('/post', function(req,res){
+        
+    });
+
     app.use('/assets',express.static('assets'));
 }
 
-function sendVotes() {
-    //var votes = voteRepository.getVotes().then(function (votes){
-    //    votes.toJSON();
-    //});
-    var voterId = 3565;
-    var voterId2 = 3566;
-    var voterId3 = 3567;
-    var post_data = JSON.stringify(
-    {
-        'voting_results':
-        [{
-            'box': 'Box1',
-            'votes':
-                [{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 },
-                { 'voter': voterId2, 'color': 'red', 'timestamp': 1447669800 },
-                { 'voter': voterId3, 'color': 'red', 'timestamp': 1447669800 }]
-        }]
+function httpPost(data) {
+    var post_options = {
+        host: 'localhost',
+        port: 3001,
+        path: '/post',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(data)
+        }
+    };
+
+    var post_request = http.request(post_options, function(response) {
+        console.log('Sent Vote');
+        response.setEncoding('utf8');
+        response.on('data', function(chunk) {
+            console.log('Response is ' + chunk);
+        });
     });
-    httpPost(post_data);
-};
+
+    post_request.write(data);
+    post_request.end();
+}
+
+function sendVotes() {
+    voteRepository.getAllVotes().then(function(votes){
+        var transformed = [];
+        votes.forEach(function(vote) {
+            transformed.push({ 
+                voter: vote.attributes.voter, 
+                // should be, get color per node
+                color:'green', 
+                timestamp: vote.attributes.created_at
+            });
+        })  ;
+
+        var post_data = JSON.stringify({'voting_results': transformed});
+        httpPost(post_data);
+    });
+}
 
 var HEARTBEAT_REGEX = /HEARTBEAT RECEIVED from nodeId:(\d+) inConn:(\d+) outConns:\[([\d,]+)\]/;
 LINE_HANDLERS.push( function heartbeatHandler(input){
@@ -178,37 +202,13 @@ LINE_HANDLERS.push(function votesHandler(input){
     var regexMatch = input.match(VOTE_REGEX);
     if( regexMatch ){
         var nodeId = regexMatch[2];
-        var tagId = regexMatch[3];
+        var voter = regexMatch[3];
         voteRepository.recordVote({
             nodeId: nodeId,
-            tagId: tagId
+            voter: voter
         });
     }
 });
-
-function httpPost(data) {
-    var post_options = {
-        host: 'localhost',
-        port: 3001,
-        path: '/post',
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(data)
-        }
-    };
-
-    var post_request = http.request(post_options, function(response) {
-        console.log('Sent Vote');
-        response.setEncoding('utf8');
-        response.on('data', function(chunk) {
-            console.log('Response is ' + chunk);
-        });
-    });
-
-    post_request.write(data);
-    post_request.end();
-}
 
 /* incoming */
 function incomingFromSerial(input) {
