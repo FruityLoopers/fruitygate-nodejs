@@ -112,13 +112,46 @@ function runWebServer(app) {
 
     app.get('/votes', function(req,res){
         voteRepository.getAllVotes().then( function(votes){
-            res.send(votes.toJSON());
+            // vote
+            var results = JSON.stringify(
+                {
+                    'voting_results':
+                    //[
+                        votes.toJSON()
+                        // for each vote in votes, 1. pull out voterId, 2. use NodeInfo to pull out green/red/yellow, 3. use the create time stamp
+                        //{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 },
+                        //{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 },
+                        //{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 }
+                    //]
+                }
+            );
+            res.send(results);
         });
     });
 
     app.use('/assets',express.static('assets'));
 }
 
+function sendVotes() {
+    //var votes = voteRepository.getVotes().then(function (votes){
+    //    votes.toJSON();
+    //});
+    var voterId = 3565;
+    var voterId2 = 3566;
+    var voterId3 = 3567;
+    var post_data = JSON.stringify(
+    {
+        'voting_results':
+        [{
+            'box': 'Box1',
+            'votes':
+                [{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 },
+                { 'voter': voterId2, 'color': 'red', 'timestamp': 1447669800 },
+                { 'voter': voterId3, 'color': 'red', 'timestamp': 1447669800 }]
+        }]
+    });
+    httpPost(post_data);
+};
 
 var HEARTBEAT_REGEX = /HEARTBEAT RECEIVED from nodeId:(\d+) inConn:(\d+) outConns:\[([\d,]+)\]/;
 LINE_HANDLERS.push( function heartbeatHandler(input){
@@ -138,6 +171,19 @@ LINE_HANDLERS.push( function heartbeatHandler(input){
   sendVotes();
 
   }
+});
+
+var VOTE_REGEX = /Gateway (\d+) received voter message from (\d+) with userId (\d+)/;
+LINE_HANDLERS.push(function votesHandler(input){
+    var regexMatch = input.match(VOTE_REGEX);
+    if( regexMatch ){
+        var nodeId = regexMatch[2];
+        var tagId = regexMatch[3];
+        voteRepository.recordVote({
+            nodeId: nodeId,
+            tagId: tagId
+        });
+    }
 });
 
 function httpPost(data) {
@@ -163,61 +209,6 @@ function httpPost(data) {
     post_request.write(data);
     post_request.end();
 }
-
-function getVotes() {
-    var get_options = {
-        host: 'localhost',
-        port: 3001,
-        path: '/votes',
-        method: 'GET'
-    };
-
-    var request = http.get(get_options, function(response) {
-        //var pageData = "";
-        //response.setEncoding('utf8');
-        //response.on('data', function (chunk) {
-        //    pageData += chunk;
-        //});
-        //response.on('end', function(){
-        //    console.log(pageData);
-        //});
-    });
-
-    request.end();
-}
-
-
-function sendVotes() {
-    //var votes = JSON.parse(getVotes()); // json array
-    var voterId = 3565;
-    var voterId2 = 3566;
-    var voterId3 = 3567;
-    var post_data = JSON.stringify(
-    {
-        'voting_results':
-        [{
-            'box': 'Box1',
-            'votes':
-                [{ 'voter': voterId, 'color': 'green', 'timestamp': 1447669800 },
-                { 'voter': voterId2, 'color': 'red', 'timestamp': 1447669800 },
-                { 'voter': voterId3, 'color': 'red', 'timestamp': 1447669800 }]
-        }]
-    });
-    httpPost(post_data);
-};
-
-var VOTE_REGEX = /Gateway (\d+) received voter message from (\d+) with userId (\d+)/;
-LINE_HANDLERS.push(function votesHandler(input){
-    var regexMatch = input.match(VOTE_REGEX);
-    if( regexMatch ){
-        var nodeId = regexMatch[2];
-        var tagId = regexMatch[3];
-        voteRepository.recordVote({
-            nodeId: nodeId,
-            tagId: tagId
-        });
-    }
-});
 
 /* incoming */
 function incomingFromSerial(input) {

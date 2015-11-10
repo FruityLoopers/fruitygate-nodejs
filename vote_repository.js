@@ -6,13 +6,13 @@ var Votes = bookshelf.Model.extend({
   hasTimestamps: true
 });
 
-module.exports = function createVoteRepository(){    
+module.exports = function createVoteRepository(){
     function recordVote(voteParams){
         return Votes.forge(voteParams).save();
     }
 
     function getAllVotes(){
-        return Votes.fetchAll();
+        return Votes.fetchAll({'columns': ['nodeId', 'tagId', 'created_at']});
     }
 
     return {
