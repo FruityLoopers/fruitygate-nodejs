@@ -115,22 +115,24 @@ function runWebServer(app) {
             var transformed = [];
             votes.forEach(function(vote) {
                 transformed.push({ 
-                    voter: vote.attributes.voter, 
+                    voter: parseInt(vote.attributes.voter), 
                     // should be, get color per node
                     color:'green', 
                     timestamp: vote.attributes.created_at
                 });
             });
 
+            var box = [];
+            box.push({box:'Box1', votes:transformed});
             var results = JSON.stringify(
-                {'voting_results': transformed}
+                {'voting_results': box}
             );
             res.send(results);
         });
     });
 
     app.post('/post', function(req,res){
-        
+
     });
 
     app.use('/assets',express.static('assets'));
@@ -165,16 +167,19 @@ function sendVotes() {
         var transformed = [];
         votes.forEach(function(vote) {
             transformed.push({ 
-                voter: vote.attributes.voter, 
+                voter: parseInt(vote.attributes.voter), 
                 // should be, get color per node
                 color:'green', 
                 timestamp: vote.attributes.created_at
             });
         })  ;
 
-        var post_data = JSON.stringify({'voting_results': transformed});
+        var box = [];
+        box.push({box:'Box1', votes:transformed});
+        var post_data = JSON.stringify({'voting_results': box});
         httpPost(post_data);
     });
+    // Handle failure response: {"success":false,"reason":"Invalid request"}
 }
 
 var HEARTBEAT_REGEX = /HEARTBEAT RECEIVED from nodeId:(\d+) inConn:(\d+) outConns:\[([\d,]+)\]/;
