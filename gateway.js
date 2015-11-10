@@ -240,16 +240,21 @@ function incomingFromSerial(input) {
         }
         console.log(handshakeObj['message']);
         console.log(handshakeObj['nodeId']);
+        pushTimeToMesh();
+
     } else {
         console.log(input);
     }
 }
 
-/* outgoing */
-function pushToSerial(packet) {
+function pushTimeToMesh() {
     if(serialEnabled) {
-        logOutgoing('serial');
-        serialPort.write('action ' + toTargetId(packet) + ' gateway ' + toMessage(packet) + ' \r');
+        setTimeout(function() {
+            var message = 'action 0 voting set_time ' + Date.now()/1000 + ' \r';
+            log("Message sent is: " + message);
+            serialPort.write(message);
+            return;
+        }, 5000);
     }
 }
 
