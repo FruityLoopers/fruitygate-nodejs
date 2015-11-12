@@ -126,7 +126,7 @@ function runWebServer(app) {
             var box = [];
             box.push({box:'Box1', votes:transformed});
             var results = JSON.stringify(
-                {'voting_results': box}
+                {'vote_results': box}
             );
             res.send(results);
         });
@@ -141,9 +141,9 @@ function runWebServer(app) {
 
 function httpPost(data) {
     var post_options = {
-        host: 'localhost',
-        port: 3001,
-        path: '/post',
+        host: 'qconsf.tuba-dev.com.ar',
+        port: 80,
+        path: '/voting/api/add',
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -167,18 +167,17 @@ function sendVotes() {
     voteRepository.getAllVotes().then(function(votes){
         var transformed = [];
         votes.forEach(function(vote) {
-            transformed.push({ 
-                voter: parseInt(vote.attributes.voter), 
+            transformed.push({
+                voter: parseInt(vote.attributes.voter),
                 // should be, get color per node
                 color:'green',
-                votetime: parseInt(vote.attributes.voteTime),
-                timestamp: vote.attributes.created_at
+                timestamp: parseInt(vote.attributes.voteTime)
             });
         })  ;
 
         var box = [];
         box.push({box:'Box1', votes:transformed});
-        var post_data = JSON.stringify({'voting_results': box});
+        var post_data = JSON.stringify({'vote_results': box});
         httpPost(post_data);
     });
     // Handle failure response: {"success":false,"reason":"Invalid request"}
