@@ -117,7 +117,8 @@ function runWebServer(app) {
                 transformed.push({ 
                     voter: parseInt(vote.attributes.voter), 
                     // should be, get color per node
-                    color:'green', 
+                    color:'green',
+                    votetime: parseInt(vote.attributes.voteTime),
                     timestamp: vote.attributes.created_at
                 });
             });
@@ -169,7 +170,8 @@ function sendVotes() {
             transformed.push({ 
                 voter: parseInt(vote.attributes.voter), 
                 // should be, get color per node
-                color:'green', 
+                color:'green',
+                votetime: parseInt(vote.attributes.voteTime),
                 timestamp: vote.attributes.created_at
             });
         })  ;
@@ -202,15 +204,17 @@ LINE_HANDLERS.push( function heartbeatHandler(input){
   }
 });
 
-var VOTE_REGEX = /Gateway (\d+) received voter message from (\d+) with userId (\d+)/;
+var VOTE_REGEX = /Gateway (\d+) received voter message from (\d+) with userId (\d+) and time (\d+)/;
 LINE_HANDLERS.push(function votesHandler(input){
     var regexMatch = input.match(VOTE_REGEX);
     if( regexMatch ){
         var nodeId = regexMatch[2];
         var voter = regexMatch[3];
+        var voteTime = regexMatch[4];
         voteRepository.recordVote({
             nodeId: nodeId,
-            voter: voter
+            voter: voter,
+            voteTime: voteTime
         });
     }
 });
