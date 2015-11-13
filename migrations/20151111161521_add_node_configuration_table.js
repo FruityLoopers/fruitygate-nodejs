@@ -1,7 +1,8 @@
 
 exports.up = function(knex, Promise) {
     return knex.schema.createTable('node_configuration', function(table) {
-        table.increments('nodeId').primary().unique()
+        table.increments('id').primary()
+        table.string('nodeId').unique()
         table.string('boxId')
         table.string('color')
         table.timestamps()

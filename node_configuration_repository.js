@@ -11,31 +11,17 @@ module.exports = function createNodeConfigurationRepository(){
         return NodeConfiguration.forge(nodeConfigurationParams).save();
     }
 
-    function updateNodeConfiguration(nodeConfigurationParams){
-        return NodeConfiguration.query({where: {nodeId: nodeConfigurationParams.nodeId}})
-        .fetch()
-        .then(function(model){
-          model.set('boxId', nodeConfigurationParams.boxId);
-          model.set('color', nodeConfigurationParams.color);
-          model.save({'boxId': true}, {patch: true});
-          return model;
-        });
-    }
-
-    function isNodeIdPresent(nodeId) {
-      NodeConfiguration.where('nodeId', nodeId).count('nodeId')
-          .then(function(count){
-              return count;
+    function createOrUpdateNodeConfiguration(nodeConfigurationParams) {
+        return new NodeConfiguration({'nodeId': nodeConfigurationParams.nodeId})
+          .fetch()
+          .then(function(model) {
+            if (model) {
+                new NodeConfiguration({id: model.get('id')}).save(nodeConfigurationParams);
+            }
+            else {
+                recordNodeConfiguration(nodeConfigurationParams);
+            }
           });
-
-          // return NodeConfiguration.where('nodeId', nodeId).count(nodeId);
-          // Select * from table where nodeId=nodeID;
-          // NodeConfiguration.forge({nodeId:nodeId})
-          //   .count()
-          //   .then(function(count) {
-          //     console.log
-          //   });
-
     }
 
     function getAllNodeConfigurations(){
@@ -43,9 +29,7 @@ module.exports = function createNodeConfigurationRepository(){
     }
 
     return {
-        recordNodeConfiguration: recordNodeConfiguration,
-        updateNodeConfiguration: updateNodeConfiguration,
-        isNodeIdPresent: isNodeIdPresent,
+        createOrUpdateNodeConfiguration: createOrUpdateNodeConfiguration,
         getAllNodeConfigurations: getAllNodeConfigurations
     };
 }

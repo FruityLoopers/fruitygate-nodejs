@@ -199,7 +199,8 @@ LINE_HANDLERS.push( function heartbeatHandler(input){
       outConns: outConns
     };
 
-  sendVotes();
+  //sendVotes();
+
 
   }
 });
