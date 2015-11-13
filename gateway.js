@@ -137,6 +137,12 @@ function runWebServer(app) {
 
     });
 
+    app.get('/boxes', function(req,res){
+            nodeConfigurationRepository.getAllNodeConfigurations().then( function(configurations){
+                res.send(configurations.toJSON());
+            });
+    });
+
     app.use('/assets',express.static('assets'));
 }
 
