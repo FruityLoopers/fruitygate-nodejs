@@ -5,6 +5,7 @@ var server = require('http').Server(app);
 var http = require('http');
 
 var voteRepository = require('./vote_repository')();
+var nodeConfigurationRepository = require('./node_configuration_repository')();
 
 var serialport = require('serialport');
 var SerialPort = serialport.SerialPort;
