@@ -28,8 +28,14 @@ module.exports = function createNodeConfigurationRepository(){
         return NodeConfiguration.fetchAll({'columns': ['nodeId', 'boxId', 'color', 'created_at']});
     }
 
+    function getTypeForNode(nodeId) {
+        return new NodeConfiguration({'nodeId': nodeId})
+        .fetch({'columns': ['color']});
+    }
+
     return {
         createOrUpdateNodeConfiguration: createOrUpdateNodeConfiguration,
-        getAllNodeConfigurations: getAllNodeConfigurations
+        getAllNodeConfigurations: getAllNodeConfigurations,
+        getTypeForNode: getTypeForNode
     };
 }
