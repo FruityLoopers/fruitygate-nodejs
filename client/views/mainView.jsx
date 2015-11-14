@@ -1,6 +1,7 @@
 import React from 'react';
 import MeshDashboard from './meshDashboard.jsx';
 import MessageSender from './messageSender.jsx';
+import NodeConfiguration from './nodeConfiguration.jsx';
 
 export default class Main extends React.Component {
   render(){
@@ -10,8 +11,9 @@ export default class Main extends React.Component {
       <a href="/boxes">VIEW BOX CONFIGURATIONS</a>
       <br/><br/>
       <button>Send Votes</button>
+
       <MeshDashboard nodes={this.props.nodes}/>
-      <MessageSender/>
+      <NodeConfiguration />
     </div>;
   }
 }

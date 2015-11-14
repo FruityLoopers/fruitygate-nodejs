@@ -3,6 +3,7 @@ var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var http = require('http');
+var bodyParser = require('body-parser');
 
 var voteRepository = require('./vote_repository')();
 var nodeConfigurationRepository = require('./node_configuration_repository')();
@@ -93,6 +94,11 @@ function beginHttp(port) {
 }
 
 function runWebServer(app) {
+    app.use('/assets',express.static('assets'));
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
+
+
     app.get('/', function(req, res){
         res.sendFile(__dirname + '/index.html');
     });
@@ -133,9 +139,20 @@ function runWebServer(app) {
         });
     });
 
-    app.post('/post', function(req,res){
 
+    app.post('/configure', function (req, res) {
+      console.log(req.body);
+
+      nodeConfigParams = {
+        'nodeId' : req.body.nodeId,
+        'boxId' : req.body.groupId,
+        'color' : req.body.nodeType
+      }
+      saveConfiguration(nodeConfigParams);
+
+      return res.send({status: 'OK'});
     });
+
 
     app.get('/boxes', function(req,res){
             nodeConfigurationRepository.getAllNodeConfigurations().then( function(configurations){
@@ -143,7 +160,6 @@ function runWebServer(app) {
             });
     });
 
-    app.use('/assets',express.static('assets'));
 }
 
 function httpPost(data) {
@@ -188,6 +204,10 @@ function sendVotes() {
         httpPost(post_data);
     });
     // Handle failure response: {"success":false,"reason":"Invalid request"}
+}
+
+function saveConfiguration (configParams) {
+    nodeConfigurationRepository.createOrUpdateNodeConfiguration(configParams);
 }
 
 var HEARTBEAT_REGEX = /HEARTBEAT RECEIVED from nodeId:(\d+) inConn:(\d+) outConns:\[([\d,]+)\]/;

@@ -5,9 +5,10 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
-      form { background: #ccc; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 0.6em; width: 33%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 0.6em; }
+      #nodeForm { padding: 3px; position: fixed; bottom: 0; width: 20%; }
+      form button { background: rgb(130, 224, 255); border: none; padding: 0.6em; }
+
+
       .node-container .status-light {
          width: 20px;
          height: 20px;
@@ -25,10 +26,5 @@
     <main/>
     <script src="assets/bundle.js"></script>
 
-    <form action="#">
-      Target node ID: <input id="targetNodeId" maxlength="5" autocomplete="off">
-      Message: <input id="message" maxlength="10" autocomplete="off">
-      <button>Send</button>
-    </form>
   </body>
 </html>
