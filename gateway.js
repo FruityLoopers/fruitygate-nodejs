@@ -235,13 +235,14 @@ LINE_HANDLERS.push( function heartbeatHandler(input){
   }
 });
 
-var VOTE_REGEX = /Gateway (\d+) received voter message from (\d+) with userId (\d+) and time (\d+)/;
+var VOTE_REGEX = /Gateway (\d+) received voter message from (\d+) with userId (\d+)/;
 LINE_HANDLERS.push(function votesHandler(input){
+
     var regexMatch = input.match(VOTE_REGEX);
     if( regexMatch ){
         var nodeId = regexMatch[2];
         var voter = regexMatch[3];
-        var voteTime = regexMatch[4];
+        var voteTime = Math.floor(Date.now() / 1000);
         voteRepository.recordVote({
             nodeId: nodeId,
             voter: voter,
