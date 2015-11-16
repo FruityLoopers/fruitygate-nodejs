@@ -118,24 +118,28 @@ function runWebServer(app) {
     });
 
     app.get('/votes', function(req,res){
-        voteRepository.getAllVotes().then(function(votes){
-            var transformed = [];
-            votes.forEach(function(vote) {
-                transformed.push({ 
-                    voter: parseInt(vote.attributes.voter), 
-                    // should be, get color per node
-                    color:'green',
-                    votetime: parseInt(vote.attributes.voteTime),
-                    timestamp: vote.attributes.created_at
+        nodeConfigurationRepository.getAllNodeConfigurations().then(function(nodes) {
+            voteRepository.getAllVotes().then(function (votes) {
+                var denormalizedVotes = votes.toJSON().map(function(vote) {
+                  return _.extend({}, vote, _.findWhere(nodes.toJSON(), {nodeId: vote.nodeId}))
                 });
-            });
 
-            var box = [];
-            box.push({box:'Box1', votes:transformed});
-            var results = JSON.stringify(
-                {'vote_results': box}
-            );
-            res.send(results);
+                function formatVote(vote) {
+                  return {
+                    voter: vote.voter,
+                    color: vote.color,
+                    timestamp: vote.voteTime
+                  };
+                 };
+
+                var groupedVotes = _.groupBy(denormalizedVotes, 'boxId');
+                res.send(_.keys(groupedVotes).map(function(box) {
+                  return {
+                    box: box,
+                    votes: groupedVotes[box].map(formatVote)
+                  };
+              }));
+            });
         });
     });
 
