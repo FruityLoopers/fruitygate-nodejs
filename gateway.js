@@ -133,12 +133,18 @@ function runWebServer(app) {
                  };
 
                 var groupedVotes = _.groupBy(denormalizedVotes, 'boxId');
-                res.send(_.keys(groupedVotes).map(function(box) {
+                var prettyVotes = _.keys(groupedVotes).map(function(box) {
                   return {
                     box: box,
                     votes: groupedVotes[box].map(formatVote)
                   };
-              }));
+              });
+
+                var votes = JSON.stringify(
+                  {'vote_results': prettyVotes}
+                );
+
+                res.send(votes);
             });
         });
     });
