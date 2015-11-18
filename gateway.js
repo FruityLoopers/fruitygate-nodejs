@@ -164,11 +164,17 @@ function runWebServer(app) {
             });
     });
 
+    app.post('/sendVotes', function(req, res) {
+      var response = sendVotes(function(results) {
+        res.send(results);
+      });
+
+    });
 }
 
-function httpPost(data) {
+function httpPost(data, callback) {
     var post_options = {
-        host: 'qconsf.tuba-dev.com.ar',
+        host: 'qconsf.com',
         port: 80,
         path: '/voting/api/add',
         method: 'POST',
@@ -179,10 +185,10 @@ function httpPost(data) {
     };
 
     var post_request = http.request(post_options, function(response) {
-        console.log('Sent Vote');
         response.setEncoding('utf8');
         response.on('data', function(chunk) {
-            console.log('Response is ' + chunk);
+            console.log('Sent Vote');
+            callback(chunk);
         });
     });
 
@@ -190,24 +196,34 @@ function httpPost(data) {
     post_request.end();
 }
 
-function sendVotes() {
-    voteRepository.getAllVotes().then(function(votes){
-        var transformed = [];
-        votes.forEach(function(vote) {
-            transformed.push({
-                voter: parseInt(vote.attributes.voter),
-                // should be, get color per node
-                color:'green',
-                timestamp: parseInt(vote.attributes.voteTime)
-            });
-        })  ;
+function sendVotes(callback) {
+  nodeConfigurationRepository.getAllNodeConfigurations().then(function(nodes) {
+      voteRepository.getAllVotes().then(function (votes) {
+          var denormalizedVotes = votes.toJSON().map(function(vote) {
+            return _.extend({}, vote, _.findWhere(nodes.toJSON(), {nodeId: vote.nodeId}))
+          });
 
-        var box = [];
-        box.push({box:'Box1', votes:transformed});
-        var post_data = JSON.stringify({'vote_results': box});
-        httpPost(post_data);
-    });
-    // Handle failure response: {"success":false,"reason":"Invalid request"}
+          function formatVote(vote) {
+            return {
+              voter: vote.voter,
+              color: vote.color,
+              timestamp: vote.voteTime
+            };
+           };
+
+          var groupedVotes = _.groupBy(denormalizedVotes, 'boxId');
+          var prettyVotes = (_.keys(groupedVotes).map(function(box) {
+            return {
+              box: box,
+              votes: groupedVotes[box].map(formatVote)
+            };
+        }));
+
+        httpPost(JSON.stringify(prettyVotes), function(results) {
+          callback(results);
+        });
+      });
+  });
 }
 
 function saveConfiguration (configParams) {
@@ -228,10 +244,6 @@ LINE_HANDLERS.push( function heartbeatHandler(input){
       inConn: inConn,
       outConns: outConns
     };
-
-  //sendVotes();
-
-
   }
 });
 

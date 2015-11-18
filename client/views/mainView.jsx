@@ -10,7 +10,9 @@ export default class Main extends React.Component {
       <br/><br/>
       <a href="/boxes">VIEW BOX CONFIGURATIONS</a>
       <br/><br/>
-      <button>Send Votes</button>
+      <form action="/sendVotes" method="post">
+        <button>Send Votes</button>
+      </form>
 
       <MeshDashboard nodes={this.props.nodes}/>
       <NodeConfiguration />
