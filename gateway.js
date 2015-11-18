@@ -219,9 +219,11 @@ function sendVotes(callback) {
             };
         }));
 
-        httpPost(JSON.stringify(prettyVotes), function(results) {
-          callback(results);
-        });
+        var votes = JSON.stringify(
+                {'vote_results': prettyVotes}
+        );
+
+        httpPost(JSON.stringify(votes), callback);
       });
   });
 }
