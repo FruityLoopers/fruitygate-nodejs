@@ -31,3 +31,6 @@ node_modules
 /assets/bundle.js.map
 
 /fruitybrain.db.sqlite3
+
+/.idea
+/*.iml
